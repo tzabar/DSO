@@ -1,0 +1,8 @@
+python videoToImageStamps_without_FPS_Option.py --video "./recorded_videos/calib_sweep_1.avi" --imageFolder "./images" --timeStampsFile "./times.txt"
+
+
+
+./responseCalib "/home/yoni4/tzabar/DSO/Datasets/home_sweep_response/"
+
+
+./vignetteCalib "/home/yoni4/tzabar/DSO/Datasets/home_sweep_vignette/"
