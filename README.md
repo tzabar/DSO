@@ -14,3 +14,5 @@ git clone git@github.com:anqixu/ueye_cam.git
 git clone git@github.com:SyllogismRXS/ldso_ros.git  or  git clone git@github.com:yx0123/ldso_ros.git
 
 git clone git@github.com:ethz-asl/kalibr.git
+
+git clone git@github.com:tau-adl/DSO.git
