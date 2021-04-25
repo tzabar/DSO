@@ -1,0 +1,120 @@
+On a host terminal type gedit .bashrc and change at the end:
+export PATH=$PATH'/opt/android-studio/bin:/opt/ghidra_9.0.4:/opt/jadx-0.9.0/bin:/opt/node-v10.16.0-linux-x64/bin'
+export DSO_PATH=/home/user/DSO/dso
+source /opt/ros/melodic/setup.bash
+source /home/user/DSO/DSO_ws/devel/setup.bash
+#export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:/home/user/DSO/DSO_ws/src/BagFromImages
+#source ~/LDSO_ROS_WRAPPER/catkin_ws/devel/setup.bash
+#source /home/user/mvBlueFOX3_ws/devel/setup.bash
+#source /home/user/ROS/Tello_ROS_ORBSLAM/ROS/tello_catkin_ws/devel/setup.bash
+#source /home/user/VINS_Mono_ws/devel/setup.bash
+
+connect the IDS camera to a USB 
+open a new terminator terminal and type sudo ueyedemo
+Focus the camera lens with your hand
+Create an .ini file by choosing the desired camera parameters in uEye-->Properties, goto File-->save parameter-->to file  and save to file your_name.ini  
+Copy your_name.ini to ~/.ros/camera_parameters_file. You can also save the parameters to  File-->save parameter-->Parameter set and load them next time
+inside ~/DSO/DSO_ws/src/ueye_cam/launch/rgb8.launch change the .ini file to your_name.ini
+close ueyedemo
+in  a new terminal type roslaunch ueye_cam rgb8.launch
+
+Step1 - create a video for the intrinsic calibration 
+in  a new terminal type roslaunch ueye_cam rgb8.launch
+in a new terminal type -  cd /home/user/Datasets 
+and then: rosbag record -O output_your_name /camera/image_raw
+create a video according to youtube.com/watch?v=_Tbu0yLPbVA minute 00:40 (WORK WITH AN 	APRILTAG BOARD)
+
+Step2 - calibrate the camera with kalibr
+cd /home/user/DSO/DSO_ws/src/kalibr/aslam_offline_calibration/kalibr/python/
+python kalibr_calibrate_cameras --target april_board_large.yaml --bag /home/user/Datasets/output_your_name.bag --models pinhole-equi --topics /camera/image_raw
+please check the report_cam.pdf that was just created and verify the pixel error is less than 0.7
+
+
+Step3 - create camera.txt and insert to 3 folders
+to home_sweep folder insert the following camera.txt file, where the first 4 numbers are fx/1280 fy/1024 cx/1280 cy/1024
+
+EquiDistant   0.655561689  0.819980781  0.556134596  0.622731208 -0.0019668261344074397 -0.02539404563772661 0.032937928652400555 -0.013733559603575744
+1280 1024
+crop
+640 480
+
+
+to home_sweep_response and home_sweep_vignette folders insert the following camera.txt file
+
+0.655561689  0.819980781  0.556134596  0.622731208 0
+1280 1024
+crop
+640 480
+
+
+Step4 record video for the response calibration
+cd ~/IDS_cam/DSO/IDS
+create the library images or erase its content if already created. frames are saved to it
+your_name.ini was is the same as the one created above (copy it to here)
+in a new terminal type - python3  captureVideoUEye.py --fps=30 --parameterSetFile="your_name.ini" --calib=1
+times.txt was just created
+
+
+Step5 perform response calibration and obtain pcalib.txt
+copy the images lib and times.txt just created to /home/user/Datasets/home_sweep_response 
+cd  DSO/mono_dataset_code/build/bin
+./responseCalib "/home/user/Datasets/home_sweep_response/"
+copy /home/user/DSO/mono_dataset_code/build/bin/photoCalibResult/pcalib.txt to /home/user/Datasets/home_sweep_vignette
+
+
+Step 6 - use ar code to perform Vignette calibration 
+cd ~/IDS_cam/DSO/IDS
+create the library images or erase its content if already created
+python3  captureVideoUEye.py --fps=30 --parameterSetFile="your_name.ini" --calib=0
+use the backside of the apriltagboard and watch minute in the youtube video
+capture about 550 frames (erase the rest from images library, also in times.txt, and erase the 0th frame and timestamp)
+copy the images lib and times.txt to to /home/user/Datasets/home_sweep_vignette
+cd ~/DSO/mono_dataset_code/build/bin
+./vignetteCalib "/home/user/Datasets/home_sweep_vignette/"
+from DSO/mono_dataset_code/build/bin/vignette_calib_result take vignette.png and put in "/home/user/Datasets/home_sweep"
+from home_sweep_vignette take pcalib.txt and put in "/home/user/Datasets/home_sweep"
+
+
+Run DSO on a prerecorded video (images folder + times.txt)
+cd ~/IDS_cam/DSO/IDS
+create the library images or erase its content if already created
+prerecord a video using:  python3  captureVideoUEye.py --fps=30 --parameterSetFile="your_name.ini" --calib=0 , and copy the images lib and times.txt to /home/user/Datasets/home_sweep
+in a new terminal type - cd ~/DSO/dso/build/bin
+./dso_dataset files="/home/user/Datasets/home_sweep/images"  vignette="/home/user/Datasets/home_sweep/vignette.png" calib="/home/user/Datasets/home_sweep/camera.txt"  gamma="/home/user/Datasets/home_sweep/pcalib.txt"
+
+
+Run LDSO on a prerecorded video (images folder + times.txt)
+cd /DSO/LDSO/bin
+./run_dso_tum_mono files="/home/user/Datasets/home_sweep/images"  vignette="/home/user/Datasets/home_sweep/vignette.png" calib="/home/user/Datasets/home_sweep/camera.txt"  gamma="/home/user/Datasets/home_sweep/pcalib.txt"
+
+
+Run DSO live 
+*********
+(following could be done on edge comp or on host)
+cd ~/DSO/DSO_ws/src/ueye_cam/launch
+gedit rgb8.launch
+change name.ini in:  value="$(env HOME)/.ros/camera_parameters_file/name.ini" and save name.ini also to /.ros/camera_parameters_file
+roslaunch rgb8.launch
+*********
+On Host
+rosrun dso_ros dso_live image:=/camera/image_raw  vignette="/home/user/Datasets/home_sweep/vignette.png" calib="/home/user/Datasets/home_sweep/camera.txt"  gamma="/home/user/Datasets/home_sweep/pcalib.txt"
+
+
+Run LDSO live (was not checked)
+cd ~/DSO/DSO_ws/src/ueye_cam/launch
+gedit rgb8.launch
+change name.ini in:  value="$(env HOME)/.ros/camera_parameters_file/name.ini" and save name.ini also to /.ros/camera_parameters_file
+roslaunch rgb8.launch
+in all terminals:   source ~/LDSO_ROS_WRAPPER/catkin_ws/devel/setup.bash
+rosrun ldso_2 ldso_live image:=/camera/image_raw  vignette="/home/user/Datasets/home_sweep/vignette.png" calib="/home/user/Datasets/home_sweep/camera.txt"  gamma="/home/user/Datasets/home_sweep/pcalib.txt
+
+
+Run DSO on a Bag file
+play bag file
+rosrun dso_ros   dso_live image:=/camera/image_raw    calib=home/user/Datasets/home_sweep/camera.txt   gamma=home/user/Datasets/home_sweep/pcalib.txt   vignette=home/user/Datasets/home_sweep/vignette.png
+
+
+Some more stuff:
+camera calibration validator, please see Kalibr website
+kalibr_camera_validator --cam pinhole-equi_1752_1342/camchain-homeuserDatasetsoutput_yoni_1750_1350.yaml --target april_board.yaml
+

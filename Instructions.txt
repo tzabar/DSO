@@ -26,6 +26,13 @@ code ~/Desktop/calibration_bag
 
 to home_sweep folder insert the following camera.txt file, where the first 4 numbers are fx/1280 fy/1024 cx/1280 cy/1024
 
+EquiDistant fx fy cx cy k1 k2 r1 r2
+in_width in_height
+"crop" / "full" / "fx fy cx cy 0"
+out_width out_height
+
+example:
+
 EquiDistant   0.655561689  0.819980781  0.556134596  0.622731208 -0.0019668261344074397 -0.02539404563772661 0.032937928652400555 -0.013733559603575744
 1280 1024
 crop
