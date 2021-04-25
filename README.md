@@ -16,3 +16,5 @@ git clone git@github.com:SyllogismRXS/ldso_ros.git  or  git clone git@github.com
 git clone git@github.com:ethz-asl/kalibr.git
 
 git clone git@github.com:tau-adl/DSO.git
+
+git clone git@github.com:stevenlovegrove/Pangolin.git
