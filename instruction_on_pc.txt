@@ -1,0 +1,4 @@
+cd /local/users/tzabarn/tza_DSO/IDS_Camera
+mkdir images
+python3 captureVideoUEye.py --fps=30 --parameterSetFile="/local/users/tzabarn/tza_DSO/IDS_Camera/parameter_sets/tzabar_4.ini" --calib=0
+or launch "iDS capture"
